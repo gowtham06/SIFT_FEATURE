@@ -33,7 +33,9 @@ void draw_descriptor_image(CImg<double> image, const vector<SiftDescriptor> desc
 	      tx1 = (descriptors[i].col + y - 1);
 	      ty1 = (descriptors[i].row + x - 1);
 	      if (tx1 >= 0 && tx1 < image.width() && ty1 >= 0 && ty1 < image.height())
-		image( tx1, ty1, 0, c) = color_point[c];				
+	      {	
+		image( tx1, ty1, 0, c) = color_point[c];		
+	      }				
 	    }
     }
   image.get_normalize(0,255).save(filename);
@@ -145,19 +147,15 @@ void getWarpedImage(CImg<double> input_image,double projectiveTransform[][3])
 	double inverse[3][3];
 	inverseMatrix(projectiveTransform,inverse);
 	CImg<double> output_image(1024,1024);
-	for(int i=0;i<input_image.width();i++)
+	
+	cimg_forXY(input_image,i,j)
 	{
-		for(int j=0;j<input_image.height();j++)
-		{
-			float y = (inverse[0][0] * i + inverse[0][1] *j + inverse[0][2]*1);
-			float x = (inverse[1][0] * i + inverse[1][1] *j + inverse[1][2]*1);
-			float w = (inverse[2][0] * i + inverse[2][1] *j + inverse[2][2]*1);
-//			cout<< y <<' '<<endl;
-			if((x/w > 0) && (x/w<1024) && (y/w>0) && (y/w<1024))	
-				output_image(i,j) = input_image(int(y/w),int(x/w));
-		}
+		float x = (inverse[0][0] * i + inverse[0][1] *j + inverse[0][2]*1);
+		float y = (inverse[1][0] * i + inverse[1][1] *j + inverse[1][2]*1);
+		float w = (inverse[2][0] * i + inverse[2][1] *j + inverse[2][2]*1);
+		if((x/w > 0) && (x/w<1024) && (y/w>0) && (y/w<1024))	
+			output_image(i,j) = input_image(int(x/w),int(y/w));
 	}
-
 
 	output_image.save("output.png");
 
@@ -165,7 +163,7 @@ void getWarpedImage(CImg<double> input_image,double projectiveTransform[][3])
 
 CImg<double> getTransformationMatrix(int x1,int y1,int x2,int y2,int x3,int y3,int x4,int y4,int X1,int Y1,int X2,int Y2,int X3,int Y3,int X4,int Y4)
 {
-	CImg<double> A(8,8);
+	CImg<long double> A(8,8);
 	A(0,0) = x1; A(0,1) = y1; A(0,2) = 1; A(0,3) = 0; A(0,4) = 0; A(0,5) = 0; A(0,6) = -x1*X1; A(0,7) = -y1*X1;
 	
 	A(1,0) = 0; A(1,1) = 0; A(1,2) = 0; A(1,3) = x1; A(1,4) = y1; A(1,5) = 1; A(1,6) = -x1*Y1; A(1,7) = -y1*Y1;
@@ -182,24 +180,26 @@ CImg<double> getTransformationMatrix(int x1,int y1,int x2,int y2,int x3,int y3,i
 	
 	A(7,0) = 0; A(7,1) = 0; A(7,2) = 0; A(7,3) = x4; A(7,4) = y4; A(7,5) = 1; A(7,6) = -x4*Y4; A(7,7) = -y4*Y4;
 
-	CImg<double> B(8,1);
-
+	CImg<long double> B(1,8);
+//	cout<<B.width()<<endl;
+	CImg<long double> X(8,1);
 	B(0,0) = X1;
-	B(1,0) = Y1;	
-	B(2,0) = X2;
-	B(3,0) = Y2;
-	B(4,0) = X3;
-	B(5,0) = Y3;
-	B(6,0) = X4;
-	B(7,0) = Y4;
+	B(0,1) = Y1;	
+	B(0,2) = X2;
+	B(0,3) = Y2;
+	B(0,4) = X3;
+	B(0,5) = Y3;
+	B(0,6) = X4;
+	B(0,7) = Y4;
 
-//	CImg<double> transformMatrix(9,1) = B.solve(A);
-	CImg<double>::B.solve(A);
-	for(int i=0;i<B.width();i++)
-		for(int j=0;j<B.height();j++)
-			cout<<B(i,j)<<' '<<endl;
-
-	return A;
+//	CImg<double> transformMatrix(8,1) = A.solve(B);
+	X = B.solve(A.transpose());
+/*	cimg_forXY(X,i,j)
+	{
+		cout<<X(i,j)<<endl;
+	}
+*/
+	return X;
 }
 int main(int argc, char **argv)
 {
@@ -211,8 +211,8 @@ int main(int argc, char **argv)
 	string part = "";
 	CImg<double> input_image("images/part1/lincoln.png");
 	CImg<double> input_gray = input_image.get_RGBtoHSI().get_channel(2);
-//	vector<SiftDescriptor> input_descriptors = Sift::compute_sift(input_gray);
-//	draw_descriptor_image(input_image, input_descriptors, "input_image.png");
+	vector<SiftDescriptor> input_descriptors = Sift::compute_sift(input_gray);
+	draw_descriptor_image(input_image, input_descriptors, "input_image.png");
 	double projectiveTransform[3][3];
 	double inverse[3][3];
 	projectiveTransform[0][0] = 0.907;
@@ -235,31 +235,53 @@ int main(int argc, char **argv)
 	inverse[2][1] = -0.000597;
 	inverse[2][2] = 1.0827;
 
-	inverseMatrix(projectiveTransform,inverse);
-/*
-	for(int i=0;i<3;i++)
-		for(int j=0;j<3;j++)
-			cout<<inverse[i][j]<<' '<<endl;	
-*/
+//	inverseMatrix(projectiveTransform,inverse);
+
 	CImg<double> output_image(1024,1024);
-	for(int i=0;i<input_image.width();i++)
+	
+	cimg_forXY(input_image,i,j)
 	{
-		for(int j=0;j<input_image.height();j++)
-		{
-			float y = (inverse[0][0] * i + inverse[0][1] *j + inverse[0][2]*1);
-			float x = (inverse[1][0] * i + inverse[1][1] *j + inverse[1][2]*1);
-			float w = (inverse[2][0] * i + inverse[2][1] *j + inverse[2][2]*1);
-//			cout<< y <<' '<<endl;
-			if((x/w > 0) && (x/w<1024) && (y/w>0) && (y/w<1024))	
-				output_image(i,j) = input_image(int(y/w),int(x/w));
-		}
+		float x = (inverse[0][0] * i + inverse[0][1] *j + inverse[0][2]*1);
+		float y = (inverse[1][0] * i + inverse[1][1] *j + inverse[1][2]*1);
+		float w = (inverse[2][0] * i + inverse[2][1] *j + inverse[2][2]*1);
+		if((x/w > 0) && (x/w<1024) && (y/w>0) && (y/w<1024))	
+			output_image(i,j) = input_image(int(x/w),int(y/w));
 	}
-
-
 	output_image.save("output.png");
-	getTransformationMatrix(318,256,534,372,316,670,73,473,141,131,480,159,493,630,64,601);	
-			
+	getTransformationMatrix(318,256,534,372,316,670,73,473,141,131,480,159,493,630,64,601);
 
+	CImg<double> billboard_image("images/part1/billboard1.jpg");
+	input_gray = billboard_image.get_RGBtoHSI().get_channel(2);
+
+	input_descriptors = Sift::compute_sift(input_gray);
+	draw_descriptor_image(billboard_image, input_descriptors, "sift.png");
+
+/*	for(int i=0;i<input_gray.height();i++)
+		for(int j=0;j<input_gray.width();j++)
+		{
+			if(input_gray(i,j) == 255)
+			{
+				cout<<i<<' '<<j<<endl;
+				break;
+			}	
+		}
+	
+*/
+	
+	
+	CImg<double> kernel(5,5);
+
+	kernel(0,0) = 1/256 ; kernel(0,1) = 4/256 ; kernel(0,2) = 6/256 ;kernel(0,3) = 4/256 ;kernel(0,4) = 1/256 ;
+	kernel(1,0) = 4/256 ; kernel(1,1) = 16/256 ; kernel(1,2) = 24/256 ;kernel(1,3) = 16/256 ;kernel(1,4) = 4/256 ;
+	kernel(2,0) = 6/256 ; kernel(2,1) = 24/256 ; kernel(2,2) = 36/256 ;kernel(2,3) = 24/256 ;kernel(2,4) = 6/256 ;
+	kernel(3,0) = 4/256 ; kernel(3,1) = 16/256 ; kernel(3,2) = 24/256 ;kernel(3,3) = 16/256 ;kernel(3,4) = 4/256 ;
+	kernel(4,0) = 1/256 ; kernel(4,1) = 4/256 ; kernel(4,2) = 6/256 ;kernel(4,3) = 4/256 ;kernel(4,4) = 1/256 ;
+
+	CImg<double> conv_image("images/part1/lincoln.png");
+	CImg<double> conv_gray = conv_image.get_RGBtoHSI().get_channel(2);	
+//	CImg<double> conv = input_gray.get_convolve(kernel,0);
+		
+	conv_gray.save("conv.png");
     /*
       TEST CODE - ENDS
     */
