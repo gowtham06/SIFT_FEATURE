@@ -423,6 +423,195 @@ int main(int argc, char **argv)
 	if(part == "part1"){
 	}
 	else if(part == "part2"){
+		
+			CImg<double> kernel(5,5);
+
+			kernel(0,0) = 1.00/256.00 ; kernel(0,1) = 4.00/256.00; kernel(0,2) = 6.00/256.00 ;kernel(0,3) = 4.00/256.00 ;kernel(0,4) = 1.00/256.00 ;
+			kernel(1,0) = 4.00/256.00 ; kernel(1,1) = 16.00/256.00 ; kernel(1,2) = 24.00/256.00 ;kernel(1,3) = 16.00/256.00 ;kernel(1,4) = 4.00/256.00;
+			kernel(2,0) = 6.00/256.00 ; kernel(2,1) = 24.00/256.00 ; kernel(2,2) = 36.00/256.00 ;kernel(2,3) = 24.00/256.00 ;kernel(2,4) = 6.00/256.00 ;
+			kernel(3,0) = 4.00/256.00 ; kernel(3,1) = 16.00/256.00 ; kernel(3,2) = 24.00/256.00 ;kernel(3,3) = 16.00/256.00 ;kernel(3,4) = 4.00/256.00 ;
+			kernel(4,0) = 1.00/256.00 ; kernel(4,1) = 4.00/256.00 ; kernel(4,2) = 6.00/256.00 ;kernel(4,3) = 4.00/256.00 ;kernel(4,4) = 1.00/256.00 ;
+
+
+
+			CImg<double> apple_image(argv[1]);
+			CImg<double> orange_image("images/part2/orange.jpg");
+			CImg<double> mask(argv[3]);	
+
+			CImg<double> G0_apple = apple_image;
+			CImg<double> G0_orange = orange_image;
+			CImg<double> G0_mask(307,307,1,3);
+			cimg_forXYC(G0_mask,i,j,k)
+			{
+				G0_mask(i,j,k) = mask(i,j);
+			}
+			G0_mask.normalize(0,1);	 
+
+			CImg<double> G1_apple;
+			CImg<double> G1_orange;
+			CImg<double> G1_mask;
+			CImg<double> G1_apple_temp = apple_image.get_convolve(kernel,0,false);
+			CImg<double> G1_orange_temp = orange_image.get_convolve(kernel,0,false);
+			CImg<double> G1_mask_temp = G0_mask.get_convolve(kernel,0,false);
+			G1_apple = G1_apple_temp.get_resize_halfXY();
+			G1_orange = G1_orange_temp.get_resize_halfXY();
+			G1_mask = G1_mask_temp.get_resize_halfXY();
+			cout<<G1_apple.width()<<' '<<G1_apple.height()<<endl;
+
+			CImg<double> G2_apple;
+			CImg<double> G2_orange;
+			CImg<double> G2_mask;
+			CImg<double> G2_apple_temp = G1_apple.get_convolve(kernel,0,false);
+			CImg<double> G2_orange_temp = G1_orange.get_convolve(kernel,0,false);
+			CImg<double> G2_mask_temp = G1_mask.get_convolve(kernel,0,false);
+			G2_apple = G2_apple_temp.get_resize_halfXY();
+			G2_orange = G2_orange_temp.get_resize_halfXY();
+			G2_mask = G2_mask_temp.get_resize_halfXY();
+			G2_apple.save("G2_apple.jpg");
+
+			CImg<double> G3_apple;
+			CImg<double> G3_orange;
+			CImg<double> G3_mask;
+			CImg<double> G3_apple_temp = G2_apple.get_convolve(kernel,0,false);
+			CImg<double> G3_orange_temp = G2_orange.get_convolve(kernel,0,false);
+			CImg<double> G3_mask_temp = G2_mask.get_convolve(kernel,0,false);
+			G3_apple = G3_apple_temp.get_resize_halfXY();
+			G3_orange = G3_orange_temp.get_resize_halfXY();
+			G3_mask = G3_mask_temp.get_resize_halfXY();
+			G3_apple.save("G3_apple.jpg");	
+
+			CImg<double> G4_apple;
+			CImg<double> G4_orange;
+			CImg<double> G4_mask;
+			CImg<double> G4_apple_temp = G3_apple.get_convolve(kernel,0,false);
+			CImg<double> G4_orange_temp = G3_orange.get_convolve(kernel,0,false);
+			CImg<double> G4_mask_temp = G3_mask.get_convolve(kernel,0,false);
+			G4_apple = G4_apple_temp.get_resize_halfXY();
+			G4_orange = G4_orange_temp.get_resize_halfXY();
+			G4_mask = G4_mask_temp.get_resize_halfXY();
+			G4_apple.save("G4_apple.jpg");
+
+			CImg<double> G5_apple;
+			CImg<double> G5_orange;
+			CImg<double> G5_mask;
+			CImg<double> G5_apple_temp = G4_apple.get_convolve(kernel,0,false);
+			CImg<double> G5_orange_temp = G4_orange.get_convolve(kernel,0,false);
+			CImg<double> G5_mask_temp = G4_mask.get_convolve(kernel,0,false);
+			G5_apple = G5_apple_temp.get_resize_halfXY();
+			G5_orange = G5_orange_temp.get_resize_halfXY();
+			G5_mask = G5_mask_temp.get_resize_halfXY();
+			G5_apple.save("G5_apple.jpg");
+
+			CImg<double> L0_apple = G5_apple;
+			CImg<double> L0_orange = G5_orange;
+
+			CImg<double> L1_apple;
+			CImg<double> L1_orange;
+			CImg<double> G5_apple_upscale = G5_apple.resize_doubleXY();
+			CImg<double> G5_orange_upscale = G5_orange.resize_doubleXY();	
+			L1_apple = G4_apple - G5_apple_upscale;
+			L1_orange = G4_orange - G5_orange_upscale;
+			cout<<G5_apple_upscale.width()<<' ' <<G5_apple_upscale.height()<<endl;
+			L1_apple.normalize(0,255);
+			L1_orange.normalize(0,255);
+			L1_apple.save("L1_apple.jpg");
+
+
+			CImg<double> L2_apple;
+			CImg<double> L2_orange;
+			CImg<double> G4_apple_upscale = G4_apple.resize_doubleXY();
+			CImg<double> G4_orange_upscale = G4_orange.resize_doubleXY();
+			L2_apple = G3_apple - G4_apple_upscale;
+			L2_orange = G3_orange - G4_orange_upscale;
+			L2_apple.normalize(0,255);
+			L2_orange.normalize(0,255);
+			L2_apple.save("L2_apple.jpg");
+
+			CImg<double> L3_apple;
+			CImg<double> L3_orange;
+			CImg<double> G3_apple_upscale = G3_apple.resize_doubleXY();
+			CImg<double> G3_orange_upscale = G3_apple.resize_doubleXY();
+			L3_apple = G2_apple - G3_apple_upscale;
+			L3_orange = G2_orange - G3_orange_upscale;
+			L3_apple.normalize(0,255);
+			L3_orange.normalize(0,255);
+			L3_apple.save("L3_apple.jpg");
+
+			CImg<double> L4_apple;
+			CImg<double> L4_orange;
+			CImg<double> G2_apple_upscale = G2_apple.resize_doubleXY();
+			CImg<double> G2_orange_upscale = G2_orange.resize_doubleXY();
+			L4_apple = G1_apple - G2_apple_upscale;
+			L4_orange = G1_orange - G2_orange_upscale;
+			L4_apple.normalize(0,255);
+			L4_orange.normalize(0,255);
+			L4_apple.save("L4_apple.jpg");
+
+			CImg<double> L5_apple;
+			CImg<double> L5_orange;
+			CImg<double> G1_apple_upscale = G1_apple.resize_doubleXY();
+			CImg<double> G1_orange_upscale = G1_orange.resize_doubleXY();
+			L5_apple = G0_apple - G1_apple_upscale;
+			L5_orange = G0_orange - G1_orange_upscale;
+			L5_apple.normalize(0,255);
+			L5_orange.normalize(0,255);
+			L5_apple.save("L5_apple.jpg");
+
+			CImg<double> L0_blended(10,10);
+			CImg<double> L1_blended(20,20);
+			CImg<double> L2_blended(40,40);
+			CImg<double> L3_blended(80,80);
+			CImg<double> L4_blended(160,160);
+			CImg<double> L5_blended;
+			CImg<double> G0_mask_ones(307,307,3);
+			CImg<double> G1_mask_ones(G1_mask.width(),G1_mask.height(),3);
+			G0_mask_ones.fill(1);
+
+
+
+
+			L5_blended = G0_mask.mul(L5_apple) + (G0_mask_ones - G0_mask).mul(L5_orange);	
+			L5_blended.normalize(0,255);
+			L5_blended.save("L5_blended.jpg");
+
+			L4_blended = G1_mask.mul(L4_apple) + (G0_mask_ones.resize(G1_mask.width(),G1_mask.height()) - G1_mask).mul(L4_orange);
+			L4_blended.normalize(0,255);
+			L4_blended.save("L4_blended.jpg");
+
+			L3_blended = G2_mask.mul(L3_apple) + (G0_mask_ones.resize(G2_mask.width(),G2_mask.height()) - G2_mask).mul(L3_orange);
+			L3_blended.normalize(0,255);
+			L3_blended.save("L3_blended.jpg");
+
+			L2_blended = G3_mask.mul(L2_apple) + (G0_mask_ones.resize(G3_mask.width(),G3_mask.height()) - G3_mask).mul(L2_orange);
+			L2_blended.normalize(0,255);
+			L2_blended.save("L2_blended.jpg");
+
+			L1_blended = G4_mask.mul(L1_apple) + (G0_mask_ones.resize(G4_mask.width(),G4_mask.height()) - G4_mask).mul(L1_orange);
+			L1_blended.normalize(0,255);
+			L1_blended.save("L1_blended.jpg");
+
+			L0_blended = G5_mask.mul(L0_apple) + (G0_mask_ones.resize(G5_mask.width(),G5_mask.height()) - G5_mask).mul(L0_orange);
+			L0_blended.normalize(0,255);
+			L0_blended.save("L0_blended.jpg");
+
+
+			CImg<double> G0;
+			CImg<double> G1;
+			CImg<double> G2;
+			CImg<double> G3;
+			CImg<double> G4;
+			CImg<double> G5;
+
+			G0 = L0_blended;
+			G1 = L1_blended + G0.resize(L1_blended.width(),L1_blended.height());
+			G2 = L2_blended + G1.resize(L2_blended.width(),L2_blended.height());
+			G3 = L3_blended + G2.resize(L3_blended.width(),L3_blended.height());
+			G4 = L4_blended + G3.resize(L4_blended.width(),L4_blended.height());
+			G5 = L5_blended + G4.resize(L5_blended.width(),L5_blended.height());
+			G5 += 20;	
+			G5.save("Final.jpg");
+
+
  
         }
 	else if(part == "part3"){
