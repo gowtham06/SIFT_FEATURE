@@ -178,25 +178,25 @@ void getWarpedImage(CImg<double> input_image,double projectiveTransform[][3])
 CImg<double> getTransformationMatrix(int x1,int y1,int x2,int y2,int x3,int y3,int x4,int y4,int X1,int Y1,int X2,int Y2,int X3,int Y3,int X4,int Y4)
 {
 	CImg<long double> A(8,8);
-	A(0,0) = x1; A(0,1) = y1; A(0,2) = 1; A(0,3) = 0; A(0,4) = 0; A(0,5) = 0; A(0,6) = -x1*X1; A(0,7) = -y1*X1;
-	
-	A(1,0) = 0; A(1,1) = 0; A(1,2) = 0; A(1,3) = x1; A(1,4) = y1; A(1,5) = 1; A(1,6) = -x1*Y1; A(1,7) = -y1*Y1;
+	A(0,0) = double(x1); A(0,1) = double(y1); A(0,2) = double(1); A(0,3) = double(0); A(0,4) = double(0); A(0,5) = double(0); A(0,6) = double(-x1*X1); A(0,7) = double(-y1*X1);
 
-	A(2,0) = x2; A(2,1) = y2; A(2,2) = 1; A(2,3) = 0; A(2,4) = 0; A(2,5) = 0; A(2,6) = -x2*X2; A(2,7) = -y2*X2;
+	A(1,0) = double(0); A(1,1) = double(0); A(1,2) = double(0); A(1,3) = double(x1); A(1,4) = double(y1); A(1,5) = double(1); A(1,6) = double(-x1*Y1); A(1,7) = double(-y1*Y1);
 
-	A(3,0) = 0; A(3,1) = 0; A(3,2) = 0; A(3,3) = x2; A(3,4) = y2; A(3,5) = 1; A(3,6) = -x2*Y2; A(3,7) = -y2*Y2;
-	
-	A(4,0) = x3; A(4,1) = y3; A(4,2) = 1; A(4,3) = 0; A(4,4) = 0; A(4,5) = 0; A(4,6) = -x3*X3; A(4,7) = -y3*X3;
-	
-	A(5,0) = 0; A(5,1) = 0; A(5,2) = 0; A(5,3) = x3; A(5,4) = y3; A(5,5) = 1; A(5,6) = -x3*Y3; A(5,7) = -y3*Y3;
+	A(2,0) = double(x2); A(2,1) = double(y2); A(2,2) = double(1); A(2,3) = double(0); A(2,4) = double(0); A(2,5) = double(0); A(2,6) = double(-x2*X2); A(2,7) = double(-y2*X2);
 
-	A(6,0) = x4; A(6,1) = y4; A(6,2) = 1; A(6,3) = 0; A(6,4) = 0; A(6,5) = 0; A(6,6) = -x4*X4; A(6,7) = -y4*X4;
-	
-	A(7,0) = 0; A(7,1) = 0; A(7,2) = 0; A(7,3) = x4; A(7,4) = y4; A(7,5) = 1; A(7,6) = -x4*Y4; A(7,7) = -y4*Y4;
+	A(3,0) = double(0); A(3,1) = double(0); A(3,2) = double(0); A(3,3) = double(x2); A(3,4) = double(y2); A(3,5) = double(1); A(3,6) = double(-x2*Y2); A(3,7) = double(-y2*Y2);
+
+	A(4,0) = double(x3); A(4,1) = double(y3); A(4,2) =double(1); A(4,3) = double(0); A(4,4) = double(0); A(4,5) = double(0); A(4,6) =double(-x3*X3); A(4,7) = double(-y3*X3);
+
+	A(5,0) = double(0); A(5,1) = double(0); A(5,2) = double(0); A(5,3) = double(x3); A(5,4) = double(y3); A(5,5) = double(1); A(5,6) = double(-x3*Y3); A(5,7) = double(-y3*Y3);
+
+	A(6,0) = double(x4); A(6,1) = double(y4); A(6,2) = double(1); A(6,3) = double(0); A(6,4) = double(0); A(6,5) = double(0); A(6,6) = double(-x4*X4); A(6,7) = double(-y4*X4);
+
+	A(7,0) = double(0); A(7,1) = double(0); A(7,2) = double(0); A(7,3) = double(x4); A(7,4) = double(y4); A(7,5) = double(1); A(7,6) = double(-x4*Y4); A(7,7) = double(-y4*Y4);
 
 	CImg<long double> B(1,8);
-//	cout<<B.width()<<endl;
-	CImg<long double> X(8,1);
+	//	cout<<B.width()<<endl;
+	CImg<double> X(3,3);
 	B(0,0) = X1;
 	B(0,1) = Y1;	
 	B(0,2) = X2;
@@ -206,15 +206,17 @@ CImg<double> getTransformationMatrix(int x1,int y1,int x2,int y2,int x3,int y3,i
 	B(0,6) = X4;
 	B(0,7) = Y4;
 
-//	CImg<double> transformMatrix(8,1) = A.solve(B);
 	X = B.solve(A.transpose());
-/*	cimg_forXY(X,i,j)
+
+	CImg<double> result(3,3);
+	cimg_forXY(result,i,j)
 	{
-		cout<<X(i,j)<<endl;
+		result(i,j) = X(i,j);
 	}
-*/
-	return X;
+	result(2,2) = 1;	
+	return result;
 }
+
 
 CImg<double> drawLines(CImg<double> image,std::vector<line> lineVector){
     const unsigned char color[] = { 255,128,64 };
