@@ -265,7 +265,7 @@ for(int i=0;i<max_height;i++){
 return stiched_image;
 }
 
-CImg<double> getMatchingWithBruteForce(CImg<double> input_image_1,CImg<double> input_image_2,double threshold=0.65) {
+CImg<double> getMatchingWithBruteForce(CImg<double> input_image_1,CImg<double> input_image_2,double threshold=0.68) {
 
 // input_image_1=input_image_1.resize(input_image_2.width(),input_image_2.height());
 // input_image_1.save("resized.png");
@@ -285,13 +285,13 @@ CImg<double> getMatchingWithBruteForce(CImg<double> input_image_1,CImg<double> i
         max_width=input_image_1.width();
      }
 input_image_1=input_image_1.resize(max_width,max_height);
-input_image_1.save("resize_1.png");
+// input_image_1.save("resize_1.png");
 
 input_image_2=input_image_2.resize(max_width,max_height);
-input_image_2.save("resize_2.png");
+// input_image_2.save("resize_2.png");
 
 CImg <double> stiched_image=stcichImages(input_image_1,input_image_2);
-stiched_image.save("stiched_image.png");
+// stiched_image.save("stiched_image.png");
 
 vector<SiftDescriptor> image_1_descriptors=Sift::compute_sift(input_image_1.get_RGBtoHSI().get_channel(2));
 vector<SiftDescriptor> image_2_descriptors=Sift::compute_sift(input_image_2.get_RGBtoHSI().get_channel(2));
@@ -304,7 +304,8 @@ for(int i=0;i<image_1_descriptors.size();i++){
     double sd_2=DBL_MAX;
     double curr_distance;
     for(int j=0;j<image_2_descriptors.size();j++){
-        curr_distance=getEuclideanDistance(image_1_descriptors[i].descriptor,image_2_descriptors[j].descriptor);
+        // sift descriptor
+        curr_distance=getEuclideanDistance(image_1_descriptors[i].descriptor,image_2_descriptors[j].descriptor); 
         if(curr_distance<sd_1){
             point_2=point_1;
             point_1=j;
@@ -320,7 +321,7 @@ for(int i=0;i<image_1_descriptors.size();i++){
     }
     double d_ratio=sd_1/sd_2;
     if((point_2!=-1)&&(d_ratio<=threshold)){
-        matching_vectors.push_back({point_1,point_2,sd_1});
+        matching_vectors.push_back({i,point_1,sd_1});
     }
 }
 for(int i=0;i<image_2_descriptors.size();i++){
@@ -406,7 +407,6 @@ int main(int argc, char **argv)
     
     
     CImg<double> kernel(5,5);
-
     kernel(0,0) = 1/256 ; kernel(0,1) = 4/256 ; kernel(0,2) = 6/256 ;kernel(0,3) = 4/256 ;kernel(0,4) = 1/256 ;
     kernel(1,0) = 4/256 ; kernel(1,1) = 16/256 ; kernel(1,2) = 24/256 ;kernel(1,3) = 16/256 ;kernel(1,4) = 4/256 ;
     kernel(2,0) = 6/256 ; kernel(2,1) = 24/256 ; kernel(2,2) = 36/256 ;kernel(2,3) = 24/256 ;kernel(2,4) = 6/256 ;
