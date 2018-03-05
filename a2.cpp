@@ -103,107 +103,6 @@ CImg <double> draw_descriptor_image(CImg<double> image, const vector<line> match
 
 
 
-void getCofactor(double A[N][N], double temp[N][N], int p, int q, int n)
-{
-    int i = 0, j = 0;
- 
-    // Looping for each element of the matrix
-    for (int row = 0; row < n; row++)
-    {
-        for (int col = 0; col < n; col++)
-        {
-            //  Copying into temporary matrix only those element
-            //  which are not in given row and column
-            if (row != p && col != q)
-            {
-                temp[i][j++] = A[row][col];
- 
-                // Row is filled, so increase row index and
-                // reset col index
-                if (j == n - 1)
-                {
-                    j = 0;
-                    i++;
-                }
-            }
-        }
-    }
-}
-
-double determinant(double A[N][N], int n)
-{
-    double D = 0; // Initialize result
- 
-    //  Base case : if matrix contains single element
-    if (n == 1)
-        return A[0][0];
- 
-    double temp[N][N]; // To store cofactors
- 
-    int sign = 1;  // To store sign multiplier
- 
-     // Iterate for each element of first row
-    for (int f = 0; f < n; f++)
-    {
-        // Getting Cofactor of A[0][f]
-        getCofactor(A, temp, 0, f, n);
-        D += sign * A[0][f] * determinant(temp, n - 1);
- 
-        // terms are to be added with alternate sign
-        sign = -sign;
-    }
- 
-    return D;
-}
-
-void adjoint(double A[N][N],double adj[N][N])
-{
-    if (N == 1)
-    {
-        adj[0][0] = 1;
-        return;
-    }
- 
-    // temp is used to store cofactors of A[][]
-    double sign = 1, temp[N][N];
- 
-    for (int i=0; i<N; i++)
-    {
-        for (int j=0; j<N; j++)
-        {
-            // Get cofactor of A[i][j]
-            getCofactor(A, temp, i, j, N);
- 
-            // sign of adj[j][i] positive if sum of row
-            // and column indexes is even.
-            sign = ((i+j)%2==0)? 1: -1;
- 
-            // Interchanging rows and columns to get the
-            // transpose of the cofactor matrix
-            adj[j][i] = (sign)*(determinant(temp, N-1));
-        }
-    }
-}
-
-void inverseMatrix(double A[N][N], double inverse[N][N])
-{
-    // Find determinant of A[][]
-    double det = determinant(A, N);
-    if (det == 0)
-    {
-        cout << "Singular matrix, can't find its inverse";
-    }
- 
-    // Find adjoint
-    double adj[N][N];
-    adjoint(A, adj);
- 
-    // Find Inverse using formula "inverse(A) = adj(A)/det(A)"
-    for (int i=0; i<N; i++)
-        for (int j=0; j<N; j++)
-            inverse[i][j] = adj[i][j]/double(det);
-}
-
 void getWarpedImage(CImg<double> input_image,double projectiveTransform[][3])
 {
     double inverse[3][3];
@@ -505,76 +404,81 @@ int main(int argc, char **argv)
     CImg<double> input_gray = input_image.get_RGBtoHSI().get_channel(2);
     vector<SiftDescriptor> input_descriptors = Sift::compute_sift(input_gray);
     draw_descriptor_image(input_image, input_descriptors, "input_image.png");
-    double projectiveTransform[3][3];
-    double inverse[3][3];
-    projectiveTransform[0][0] = 0.907;
-    projectiveTransform[0][1] = 0.258;
-    projectiveTransform[0][2] = -182;
-    projectiveTransform[1][0] = -0.153;
-    projectiveTransform[1][1] = 1.44;
-    projectiveTransform[1][2] = 58;
-    projectiveTransform[2][0] = 0.000306;
-    projectiveTransform[2][1] = 0.000731;
-    projectiveTransform[2][2] = 1;
-
-    inverse[0][0] = 1.124;
-    inverse[0][1] = -0.3146;
-    inverse[0][2] = 222.95;
-    inverse[1][0] = 0.1088;
-    inverse[1][1] = 0.685;
-    inverse[1][2] = -19.92;
-    inverse[2][0] = 0.00026;
-    inverse[2][1] = -0.000597;
-    inverse[2][2] = 1.0827;
-
-	// inverseMatrix(projectiveTransform,inverse);
-
-    CImg<double> output_image(1024,1024);
     
-    cimg_forXY(input_image,i,j)
-    {
-        float x = (inverse[0][0] * i + inverse[0][1] *j + inverse[0][2]*1);
-        float y = (inverse[1][0] * i + inverse[1][1] *j + inverse[1][2]*1);
-        float w = (inverse[2][0] * i + inverse[2][1] *j + inverse[2][2]*1);
-        if((x/w > 0) && (x/w<1024) && (y/w>0) && (y/w<1024))    
-            output_image(i,j) = input_image(int(x/w),int(y/w));
-    }
-    output_image.save("output.png");
-    getTransformationMatrix(318,256,534,372,316,670,73,473,141,131,480,159,493,630,64,601);
-
-    CImg<double> billboard_image("images/part1/billboard1.jpg");
-    input_gray = billboard_image.get_RGBtoHSI().get_channel(2);
-
-    input_descriptors = Sift::compute_sift(input_gray);
-    draw_descriptor_image(billboard_image, input_descriptors, "sift.png");
-/*  for(int i=0;i<input_gray.height();i++)
-        for(int j=0;j<input_gray.width();j++)
-        {
-            if(input_gray(i,j) == 255)
-            {
-                cout<<i<<' '<<j<<endl;
-                break;
-            }   
-        }
-    
-*/
-    
-    
-    CImg<double> kernel(5,5);
-    kernel(0,0) = 1/256 ; kernel(0,1) = 4/256 ; kernel(0,2) = 6/256 ;kernel(0,3) = 4/256 ;kernel(0,4) = 1/256 ;
-    kernel(1,0) = 4/256 ; kernel(1,1) = 16/256 ; kernel(1,2) = 24/256 ;kernel(1,3) = 16/256 ;kernel(1,4) = 4/256 ;
-    kernel(2,0) = 6/256 ; kernel(2,1) = 24/256 ; kernel(2,2) = 36/256 ;kernel(2,3) = 24/256 ;kernel(2,4) = 6/256 ;
-    kernel(3,0) = 4/256 ; kernel(3,1) = 16/256 ; kernel(3,2) = 24/256 ;kernel(3,3) = 16/256 ;kernel(3,4) = 4/256 ;
-    kernel(4,0) = 1/256 ; kernel(4,1) = 4/256 ; kernel(4,2) = 6/256 ;kernel(4,3) = 4/256 ;kernel(4,4) = 1/256 ;
-
-    CImg<double> conv_image("images/part1/lincoln.png");
-    CImg<double> conv_gray = conv_image.get_RGBtoHSI().get_channel(2);  
-//  CImg<double> conv = input_gray.get_convolve(kernel,0);
-        
-    conv_gray.save("conv.png");
     
        
 	if(part == "part1"){
+			CImg<double> input_image("images/part1/lincoln.png");
+			CImg<double> input_gray = input_image.get_RGBtoHSI().get_channel(2);
+			CImg<double> projectiveTransform1(3,3);
+
+			projectiveTransform1(0,0) = 0.907;
+			projectiveTransform1(1,0) = 0.258;
+			projectiveTransform1(2,0) = -182;
+			projectiveTransform1(0,1) = -0.153;
+			projectiveTransform1(1,1) = 1.44;
+			projectiveTransform1(2,1) = 58;
+			projectiveTransform1(0,2) = -0.000306;
+			projectiveTransform1(1,2) = 0.000731;
+			projectiveTransform1(2,2) = 1;
+
+			CImg<double> inverse1 = projectiveTransform1.invert();
+			CImg<double> output_image(1024,1024,1,3,0);
+
+
+			cimg_forXY(input_image,i,j)
+			{
+				float x = (inverse1(0,0) * i + inverse1(1,0) *j + inverse1(2,0)*1);
+				float y = (inverse1(0,1) * i + inverse1(1,1) *j + inverse1(2,1)*1);
+				float w = (inverse1(0,2) * i + inverse1(1,2) *j + inverse1(2,2)*1);
+				if((x/w > 0) && (x/w<input_image.width()) && (y/w>0) && (y/w<input_image.height()))	
+				{
+					output_image(i,j,0,0) = input_image(int(x/w),int(y/w),0,0);
+					output_image(i,j,0,1) = input_image(int(x/w),int(y/w),0,1);
+					output_image(i,j,0,2) = input_image(int(x/w),int(y/w),0,2);	
+				}	
+			}
+//			getWarpedImage(input_image,projectiveTransform1);
+			output_image.save("lincoln_warped.png");
+			CImg<double> transform(3,3);
+			transform = getTransformationMatrix(141,131,480,159,493,630,64,601,318,256,534,372,316,670,73,473);
+
+			
+			cimg_forXY(transform,i,j)
+				cout<<transform(i,j)<<endl;
+
+			CImg<double> book("images/part1/book2.jpg");
+			CImg<double> inverse2 = transform.invert();
+			CImg<double> output_image1(book.width(),book.height(),1,3,0);
+
+
+			cimg_forXY(book,i,j)
+			{
+				float x = (inverse2(0,0) * i + inverse2(1,0) *j + inverse2(2,0)*1);
+				float y = (inverse2(0,1) * i + inverse2(1,1) *j + inverse2(2,1)*1);
+				float w = (inverse2(0,2) * i + inverse2(1,2) *j + inverse2(2,2)*1);
+				if((x/w > 0) && (x/w<book.width()) && (y/w>0) && (y/w<book.height()))	
+				{
+					output_image1(i,j) = book(int(x/w),int(y/w));
+					output_image1(i,j,0,0) = book(int(x/w),int(y/w),0,0);
+					output_image1(i,j,0,1) = book(int(x/w),int(y/w),0,1);
+					output_image1(i,j,0,2) = book(int(x/w),int(y/w),0,2);	
+				}	
+			}
+			output_image1.save("book_warped.png");
+
+			CImg<double> transform1(3,3);
+			transform1  = getTransformationMatrix(101,60,530,60,101,204,530,204,0,0,0,1024,1024,0,1024,1024);
+		
+			getWarpedImage(input_image,transform1);	
+			CImg<double> transform2(3,3);
+			transform2  = getTransformationMatrix(0,0,0,1024,1024,0,1024,1024,176,54,1107,260,147,625,1126,702);
+
+			CImg<double> transform3(3,3);
+			transform3  = getTransformationMatrix(141,131,480,159,493,630,64,601,318,256,534,372,316,670,73,473);
+
+
+
 	}
 	else if(part == "part2"){
 		
@@ -588,9 +492,9 @@ int main(int argc, char **argv)
 
 
 
-			CImg<double> apple_image(argv[1]);
-			CImg<double> orange_image("images/part2/orange.jpg");
-			CImg<double> mask(argv[3]);	
+			CImg<double> apple_image(argv[2]);
+			CImg<double> orange_image(argv[3]);
+			CImg<double> mask(argv[4]);	
 
 			CImg<double> G0_apple = apple_image;
 			CImg<double> G0_orange = orange_image;
@@ -610,7 +514,6 @@ int main(int argc, char **argv)
 			G1_apple = G1_apple_temp.get_resize_halfXY();
 			G1_orange = G1_orange_temp.get_resize_halfXY();
 			G1_mask = G1_mask_temp.get_resize_halfXY();
-			cout<<G1_apple.width()<<' '<<G1_apple.height()<<endl;
 
 			CImg<double> G2_apple;
 			CImg<double> G2_orange;
@@ -680,7 +583,8 @@ int main(int argc, char **argv)
 			L2_apple.normalize(0,255);
 			L2_orange.normalize(0,255);
 			L2_apple.save("L2_apple.jpg");
-
+		
+			
 			CImg<double> L3_apple;
 			CImg<double> L3_orange;
 			CImg<double> G3_apple_upscale = G3_apple.resize_doubleXY();
@@ -762,8 +666,9 @@ int main(int argc, char **argv)
 			G3 = L3_blended + G2.resize(L3_blended.width(),L3_blended.height());
 			G4 = L4_blended + G3.resize(L4_blended.width(),L4_blended.height());
 			G5 = L5_blended + G4.resize(L5_blended.width(),L5_blended.height());
-			G5 += 20;	
-			G5.save("Final.jpg");
+			G5.normalize(0,255);	
+			G5.save("Final_blended.jpg");
+
 
 
  
