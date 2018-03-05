@@ -101,9 +101,92 @@ CImg <double> draw_descriptor_image(CImg<double> image, const vector<line> match
   return image;
 }
 
+void getCofactor(double A[N][N], double temp[N][N], int p, int q, int n)
+{
+    int i = 0, j = 0;
+ 
+    for (int row = 0; row < n; row++)
+    {
+        for (int col = 0; col < n; col++)
+        {
+            if (row != p && col != q)
+            {
+                temp[i][j++] = A[row][col];
+ 
+                if (j == n - 1)
+                {
+                    j = 0;
+                    i++;
+                }
+            }
+        }
+    }
+}
+
+double determinant(double A[N][N], int n)
+{
+    double D = 0;
 
 
-void getWarpedImage(CImg<double> input_image,double projectiveTransform[][3])
+    if (n == 1)
+        return A[0][0];
+
+    double temp[N][N];
+
+    int sign = 1;
+
+    for (int f = 0; f < n; f++)
+    {
+        getCofactor(A, temp, 0, f, n);
+        D += sign * A[0][f] * determinant(temp, n - 1);
+
+        sign = -sign;
+    }
+
+    return D;
+}
+
+void adjoint(double A[N][N],double adj[N][N])
+{
+    if (N == 1)
+    {
+        adj[0][0] = 1;
+        return;
+    }
+ 
+    double sign = 1, temp[N][N];
+ 
+    for (int i=0; i<N; i++)
+    {
+        for (int j=0; j<N; j++)
+        {
+            getCofactor(A, temp, i, j, N);
+ 
+            sign = ((i+j)%2==0)? 1: -1;
+ 
+            adj[j][i] = (sign)*(determinant(temp, N-1));
+        }
+    }
+}
+
+
+void inverseMatrix(double A[N][N], double inverse[N][N])
+{
+    double det = determinant(A, N);
+    if (det == 0)
+    {
+        cout << "Singular matrix, can't find its inverse";
+    }
+ 
+    double adj[N][N];
+    adjoint(A, adj);
+ 
+    for (int i=0; i<N; i++)
+        for (int j=0; j<N; j++)
+            inverse[i][j] = adj[i][j]/double(det);
+}
+
+CImg<double> getWarpedImage(CImg<double> input_image,double projectiveTransform[][3])
 {
     double inverse[3][3];
     inverseMatrix(projectiveTransform,inverse);
@@ -121,8 +204,9 @@ void getWarpedImage(CImg<double> input_image,double projectiveTransform[][3])
             output_image(i,j,0,2) = input_image(int(x/w),int(y/w),0,2);
         }
     }
-
-    output_image.save("outputPart14_1.png");
+	
+    return output_image;
+//    output_image.save("outputPart14_1.png");
 
 }
 
@@ -440,37 +524,40 @@ int main(int argc, char **argv)
 			}
 //			getWarpedImage(input_image,projectiveTransform1);
 			output_image.save("lincoln_warped.png");
-			CImg<double> transform(3,3);
-			transform = getTransformationMatrix(141,131,480,159,493,630,64,601,318,256,534,372,316,670,73,473);
-
 			
-			cimg_forXY(transform,i,j)
-				cout<<transform(i,j)<<endl;
+			CImg<double> transformationMatrix = getTransformationMatrix(141,131,480,159,493,630,64,601,318,256,534,372,316,670,73,473);
+			double transformedMatrix[3][3];
 
-			CImg<double> book("images/part1/book2.jpg");
-			CImg<double> inverse2 = transform.invert();
-			CImg<double> output_image1(book.width(),book.height(),1,3,0);
-
-
-			cimg_forXY(book,i,j)
-			{
-				float x = (inverse2(0,0) * i + inverse2(1,0) *j + inverse2(2,0)*1);
-				float y = (inverse2(0,1) * i + inverse2(1,1) *j + inverse2(2,1)*1);
-				float w = (inverse2(0,2) * i + inverse2(1,2) *j + inverse2(2,2)*1);
-				if((x/w > 0) && (x/w<book.width()) && (y/w>0) && (y/w<book.height()))	
-				{
-					output_image1(i,j) = book(int(x/w),int(y/w));
-					output_image1(i,j,0,0) = book(int(x/w),int(y/w),0,0);
-					output_image1(i,j,0,1) = book(int(x/w),int(y/w),0,1);
-					output_image1(i,j,0,2) = book(int(x/w),int(y/w),0,2);	
-				}	
-			}
-			output_image1.save("book_warped.png");
+		        transformedMatrix[0][0] = transformationMatrix(0,0);
+		        transformedMatrix[0][1] = transformationMatrix(0,1);
+		        transformedMatrix[0][2] = transformationMatrix(0,2);
+		        transformedMatrix[1][0] = transformationMatrix(0,3);
+		        transformedMatrix[1][1] = transformationMatrix(0,4);
+		        transformedMatrix[1][2] = transformationMatrix(0,5);
+		        transformedMatrix[2][0] = transformationMatrix(0,6);
+		        transformedMatrix[2][1] = transformationMatrix(0,7);
+		        transformedMatrix[2][2] = 1;
+		        CImg<double> book_image("images/part1/book1.jpg");
+		        CImg<double> img = getWarpedImage(book_image, transformedMatrix);
+			img.save("Part1_2.jpg");
 
 			CImg<double> transform1(3,3);
 			transform1  = getTransformationMatrix(101,60,530,60,101,204,530,204,0,0,0,1024,1024,0,1024,1024);
-		
-			getWarpedImage(input_image,transform1);	
+			transformedMatrix[0][0] = transform1(0,0);
+                        transformedMatrix[0][1] = transform1(0,1);
+                        transformedMatrix[0][2] = transform1(0,2);
+                        transformedMatrix[1][0] = transform1(0,3);
+                        transformedMatrix[1][1] = transform1(0,4);
+                        transformedMatrix[1][2] = transform1(0,5);
+                        transformedMatrix[2][0] = transform1(0,6);
+                        transformedMatrix[2][1] = transform1(0,7);
+                        transformedMatrix[2][2] = 1;
+			CImg<double> bill1_image("images/part1/billboard1.jpg");
+                        CImg<double> img1 = getWarpedImage(bill1_image, transformedMatrix);
+                        img1.save("Part1_2_bill1.jpg");
+
+
+			//getWarpedImage(input_image,transform1);	
 			CImg<double> transform2(3,3);
 			transform2  = getTransformationMatrix(0,0,0,1024,1024,0,1024,1024,176,54,1107,260,147,625,1126,702);
 
@@ -687,6 +774,7 @@ int main(int argc, char **argv)
             string file_2=argv[3];
             CImg<double> input_image_1(argv[2]);
             CImg<double> input_image_2(argv[3]);
+	    CImg<double> input_image_3(argv[4]);
         Model ransac_model=generateRansacModel(input_image_1,input_image_2);
         CImg<double> transformationMatrix=ransac_model.transform_matrix;
         double transformedMatrix[3][3];
@@ -701,7 +789,61 @@ int main(int argc, char **argv)
                 transformedMatrix[2][1] = transformationMatrix(0,7);
                 transformedMatrix[2][2] = 1;
         
-        getWarpedImage(input_image_2, transformedMatrix);
+        CImg<double> img = getWarpedImage(input_image_2, transformedMatrix);
+	img.save("Part4_1_1.jpg");
+
+	ransac_model=generateRansacModel(input_image_2,input_image_1);
+        transformationMatrix=ransac_model.transform_matrix;
+        transformedMatrix[3][3];
+
+        transformedMatrix[0][0] = transformationMatrix(0,0);
+                transformedMatrix[0][1] = transformationMatrix(0,1);
+                transformedMatrix[0][2] = transformationMatrix(0,2);
+                transformedMatrix[1][0] = transformationMatrix(0,3);
+                transformedMatrix[1][1] = transformationMatrix(0,4);
+                transformedMatrix[1][2] = transformationMatrix(0,5);
+                transformedMatrix[2][0] = transformationMatrix(0,6);
+                transformedMatrix[2][1] = transformationMatrix(0,7);
+                transformedMatrix[2][2] = 1;
+
+        img = getWarpedImage(input_image_1, transformedMatrix);
+        img.save("Part4_1_2.jpg");
+
+	ransac_model=generateRansacModel(input_image_2,input_image_3);
+        transformationMatrix=ransac_model.transform_matrix;
+        transformedMatrix[3][3];
+
+        transformedMatrix[0][0] = transformationMatrix(0,0);
+                transformedMatrix[0][1] = transformationMatrix(0,1);
+                transformedMatrix[0][2] = transformationMatrix(0,2);
+                transformedMatrix[1][0] = transformationMatrix(0,3);
+                transformedMatrix[1][1] = transformationMatrix(0,4);
+                transformedMatrix[1][2] = transformationMatrix(0,5);
+                transformedMatrix[2][0] = transformationMatrix(0,6);
+                transformedMatrix[2][1] = transformationMatrix(0,7);
+                transformedMatrix[2][2] = 1;
+
+        img = getWarpedImage(input_image_3, transformedMatrix);
+        img.save("Part4_2_1.jpg");
+	
+	ransac_model=generateRansacModel(input_image_3,input_image_2);
+        transformationMatrix=ransac_model.transform_matrix;
+        transformedMatrix[3][3];
+
+	transformedMatrix[0][0] = transformationMatrix(0,0);
+                transformedMatrix[0][1] = transformationMatrix(0,1);
+                transformedMatrix[0][2] = transformationMatrix(0,2);
+                transformedMatrix[1][0] = transformationMatrix(0,3);
+                transformedMatrix[1][1] = transformationMatrix(0,4);
+                transformedMatrix[1][2] = transformationMatrix(0,5);
+                transformedMatrix[2][0] = transformationMatrix(0,6);
+                transformedMatrix[2][1] = transformationMatrix(0,7);
+                transformedMatrix[2][2] = 1;
+
+        img = getWarpedImage(input_image_2, transformedMatrix);
+        img.save("Part4_2_2.jpg");
+
+
     }
 
   }
