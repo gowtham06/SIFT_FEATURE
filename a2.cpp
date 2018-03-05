@@ -43,6 +43,7 @@ std::vector<line> match_lines;
 
 CImg <double> draw_descriptor_image(CImg<double> image, const vector<SiftDescriptor> descriptors, const char *filename)
 {
+    // cout<<"In draw_descriptor_image()m_1 function"<<endl;
   for(unsigned int i=0; i < descriptors.size(); i++)
     {
       int tx1 = 0, ty1 = 0, tx2 = 0, ty2 = 0;
@@ -52,8 +53,8 @@ CImg <double> draw_descriptor_image(CImg<double> image, const vector<SiftDescrip
 	  if(x==0 || y==0)
 	    for(int c=0; c<3; c++){
 	      //Find if coordinates are in workspace to draw crosshair
-	      tx1 = (descriptors[i].col + y - 1);
-	      ty1 = (descriptors[i].row + x - 1);
+	      tx1 = (descriptors.at(i).col + y - 1);
+	      ty1 = (descriptors.at(i).row + x - 1);
 	      if (tx1 >= 0 && tx1 < image.width() && ty1 >= 0 && ty1 < image.height())
 	      {	
 		image( tx1, ty1, 0, c) = color_point[c];		
@@ -61,12 +62,15 @@ CImg <double> draw_descriptor_image(CImg<double> image, const vector<SiftDescrip
 	    }
     }
   image.get_normalize(0,255).save(filename);
+  // cout<<"End of draw_descriptor_image()m_1 function"<<endl;
   return image;
 }
 
 CImg <double> draw_descriptor_image(CImg<double> image, const vector<line> match_lines, const char *filename)
 {
-  for(unsigned int i=0; i < match_lines.size(); i++)
+    // cout<<"In draw_descriptor_image()m_2 function"<<endl;
+    int i=0;
+  for(i=0; i < int(match_lines.size()); i++)
     {
       int tx1 = 0, ty1 = 0, tx2 = 0, ty2 = 0;
       double color_point[] = {255.0, 255.0, 0};
@@ -75,11 +79,11 @@ CImg <double> draw_descriptor_image(CImg<double> image, const vector<line> match
       if(x==0 || y==0)
         for(int c=0; c<3; c++){
           //Find if coordinates are in workspace to draw crosshair
-          tx1 = (match_lines[i].x_1 + y - 1);
-          ty1 = (match_lines[i].y_1 + x - 1);
+          tx1 = (match_lines.at(i).x_1 + y - 1);
+          ty1 = (match_lines.at(i).y_1 + x - 1);
 
-          tx2=(match_lines[i].x_2+y-1);
-          ty2 = (match_lines[i].y_2 + x - 1);
+          tx2=(match_lines.at(i).x_2+y-1);
+          ty2 = (match_lines.at(i).y_2 + x - 1);
 
           if (tx1 >= 0 && tx1 < image.width() && ty1 >= 0 && ty1 < image.height())
           { 
@@ -93,6 +97,7 @@ CImg <double> draw_descriptor_image(CImg<double> image, const vector<line> match
         }
     }
   image.get_normalize(0,255).save(filename);
+  // cout<<"End of draw_descriptor_image()m_2 function"<<endl;
   return image;
 }
 
@@ -201,20 +206,24 @@ void inverseMatrix(double A[N][N], double inverse[N][N])
 
 void getWarpedImage(CImg<double> input_image,double projectiveTransform[][3])
 {
-	double inverse[3][3];
-	inverseMatrix(projectiveTransform,inverse);
-	CImg<double> output_image(1024,1024);
-	
-	cimg_forXY(input_image,i,j)
-	{
-		float x = (inverse[0][0] * i + inverse[0][1] *j + inverse[0][2]*1);
-		float y = (inverse[1][0] * i + inverse[1][1] *j + inverse[1][2]*1);
-		float w = (inverse[2][0] * i + inverse[2][1] *j + inverse[2][2]*1);
-		if((x/w > 0) && (x/w<1024) && (y/w>0) && (y/w<1024))	
-			output_image(i,j) = input_image(int(x/w),int(y/w));
-	}
+    double inverse[3][3];
+    inverseMatrix(projectiveTransform,inverse);
+    CImg<double> output_image(input_image.width(),input_image.height(),1,3,255);
+    
+    cimg_forXY(input_image,i,j)
+    {
+        float x = (inverse[0][0] * i + inverse[0][1] *j + inverse[0][2]*1);
+        float y = (inverse[1][0] * i + inverse[1][1] *j + inverse[1][2]*1);
+        float w = (inverse[2][0] * i + inverse[2][1] *j + inverse[2][2]*1);
+        if((x/w > 0) && (x/w<input_image.width()) && (y/w>0) && (y/w<input_image.height())) 
+        {
+            output_image(i,j,0,0) = input_image(int(x/w),int(y/w),0,0);
+            output_image(i,j,0,1) = input_image(int(x/w),int(y/w),0,1);
+            output_image(i,j,0,2) = input_image(int(x/w),int(y/w),0,2);
+        }
+    }
 
-	output_image.save("output.png");
+    output_image.save("outputPart14_1.png");
 
 }
 
@@ -263,25 +272,31 @@ CImg<double> getTransformationMatrix(int x1,int y1,int x2,int y2,int x3,int y3,i
 
 
 CImg<double> drawLines(CImg<double> image,std::vector<line> lineVector){
+    // cout<<"In drawLines () function"<<endl;
     const unsigned char color[] = { 255,128,64 };
     // input_image.draw_line(40,40,80,70,color);
-    for(int i=0;i<lineVector.size();i++){
-        image.draw_line(lineVector[i].x_1,lineVector[i].y_1,lineVector[i].x_2,lineVector[i].y_2,color);
+    for(int i=0;i<int(lineVector.size());i++){
+        image.draw_line(lineVector.at(i).x_1,lineVector.at(i).y_1,lineVector.at(i).x_2,lineVector.at(i).y_2,color);
     }
+    // cout<<"End of drawLines() function"<<endl;
     return image;
 
 }
 
 bool comparator_function(data_tuple obj_1,data_tuple obj_2){
+    // cout<<"Inside comparator_function()"<<endl;
+    // cout<<"End of comparator_function() function"<<endl;
+    
     return (obj_1.short_distance<obj_2.short_distance);
 }
 
 
 double getEuclideanDistance(std::vector<float> datapoint_1,std::vector<float> datapoint_2){
 double distance=0.0;
+// cout<<"getEuclideanDistanc() function"<<endl;
 // cout<<datapoint_1.size()<<","<<datapoint_2.size()<<endl;
 for(int i=0;i<int(datapoint_1.size());i++){
-    distance+=(datapoint_1[i]-datapoint_2[i])*(datapoint_1[i]-datapoint_2[i]);
+    distance+=(datapoint_1.at(i)-datapoint_2.at(i))*(datapoint_1.at(i)-datapoint_2.at(i));
     // cout<<"("<<datapoint_1[i]<<","<<datapoint_2[i]<<")"<<endl;
 }
 // cout<<"D:"<<sqrtf(distance)<<endl;
@@ -294,6 +309,7 @@ int max_width=image_1.width();
 int max_height=image_1.height();
 
 CImg<double> stiched_image(2*max_width,max_height,1,3);
+// cout<<"In stcichImages() function"<<endl;
 for(int i=0;i<max_height;i++){
     for(int j=0;j<max_width;j++){
         for(int c=0;c<3;c++){
@@ -312,49 +328,28 @@ for(int i=0;i<max_height;i++){
 return stiched_image;
 }
 
-void draw_sift_matches(CImg<double> input_image_1,CImg<double> input_image_2,std::vector<data_tuple> matching_vectors,int max_width,const char* output_file_name){
-    
-    vector<SiftDescriptor> image_1_descriptors=Sift::compute_sift(input_image_1.get_RGBtoHSI().get_channel(2));
-    vector<SiftDescriptor> image_2_descriptors=Sift::compute_sift(input_image_2.get_RGBtoHSI().get_channel(2));
-    for(int i=0;i<image_2_descriptors.size();i++){
-    image_2_descriptors[i].col=image_2_descriptors[i].col+max_width;
-    }
-    CImg <double> stiched_image=stcichImages(input_image_1,input_image_2);
-    CImg<double> sift_descriptor;
-    sift_descriptor=draw_descriptor_image(stiched_image,image_1_descriptors,"image_sift.png");
-    sift_descriptor=draw_descriptor_image(sift_descriptor,image_2_descriptors,"image_sift.png");
-    std::vector<line>lineVector;
-    for(int i=0;i<matching_vectors.size();i++){
-        int row_1=image_1_descriptors[matching_vectors[i].feature_point_1].col;
-        int col_1=image_1_descriptors[matching_vectors[i].feature_point_1].row;
-        int row_2=image_2_descriptors[matching_vectors[i].feature_point_2].col;
-        int col_2=image_2_descriptors[matching_vectors[i].feature_point_2].row;
-        lineVector.push_back({row_1,col_1,row_2,col_2});
-        }
-
-    CImg<double> sift_match_image=drawLines(sift_descriptor,lineVector);
-    sift_match_image.save(output_file_name);
-}
 void draw_sift_matches(CImg<double> input_image_1,CImg<double> input_image_2,std::vector<line> lineVector,int max_width,const char* output_file_name){
-    
+    // cout<<"In draw_sift_matches()_m2 function"<<endl;
     vector<SiftDescriptor> image_1_descriptors=Sift::compute_sift(input_image_1.get_RGBtoHSI().get_channel(2));
     vector<SiftDescriptor> image_2_descriptors=Sift::compute_sift(input_image_2.get_RGBtoHSI().get_channel(2));
-
+    int i=0;
     std::vector<SiftDescriptor> v;
-    for(int i=0;i<image_2_descriptors.size();i++){
+    for(i=0;i<int(image_2_descriptors.size());i++){
     image_2_descriptors[i].col=image_2_descriptors[i].col+max_width;
     }
     CImg <double> stiched_image=stcichImages(input_image_1,input_image_2);
     CImg<double> sift_descriptor;
-    for(int i=0;i<lineVector.size();i++){
+    for(i=0;i<int(lineVector.size());i++){
         lineVector[i].x_2=lineVector[i].x_2+max_width;
     }
     sift_descriptor=draw_descriptor_image(stiched_image,lineVector,output_file_name);
     CImg<double> sift_match_image=drawLines(sift_descriptor,lineVector);
     sift_match_image.save(output_file_name);
+    // cout<<"End of draw_sift_matches()_m2 function"<<endl;
 }
 
-std::vector<line> get_sift_matching(CImg<double> input_image_1,CImg<double> input_image_2,double threshold=0.75) {
+std::vector<line> get_sift_matching(CImg<double> input_image_1,CImg<double> input_image_2,double threshold=0.85) {
+    // cout<<"get_sift_matching() function"<<endl;
     int max_width,max_height;
     if(input_image_1.height()<=input_image_2.height()){
         max_height=input_image_2.height();
@@ -373,13 +368,13 @@ input_image_2=input_image_2.resize(max_width,max_height);
 vector<SiftDescriptor> image_1_descriptors=Sift::compute_sift(input_image_1.get_RGBtoHSI().get_channel(2));
 vector<SiftDescriptor> image_2_descriptors=Sift::compute_sift(input_image_2.get_RGBtoHSI().get_channel(2));
 std::vector<data_tuple> matching_vectors;
-
-for(int i=0;i<image_1_descriptors.size();i++){
+int i=0,j=0;
+for(i=0;i<int(image_1_descriptors.size());i++){
     int point_1=-1,point_2=-1;
     double sd_1=DBL_MAX;
     double sd_2=DBL_MAX;
     double curr_distance;
-    for(int j=0;j<image_2_descriptors.size();j++){
+    for( j=0;j<int(image_2_descriptors.size());j++){
         curr_distance=getEuclideanDistance(image_1_descriptors[i].descriptor,image_2_descriptors[j].descriptor); 
         if(curr_distance<sd_1){
             point_2=point_1;
@@ -402,7 +397,7 @@ for(int i=0;i<image_1_descriptors.size();i++){
 }
     std::vector<line>lineVector;
     
-for(int i=0;i<matching_vectors.size();i++){
+for(i=0;i<int(matching_vectors.size());i++){
     int row_1=image_1_descriptors[matching_vectors[i].feature_point_1].col;
     int col_1=image_1_descriptors[matching_vectors[i].feature_point_1].row;
     int row_2=image_2_descriptors[matching_vectors[i].feature_point_2].col;
@@ -410,6 +405,7 @@ for(int i=0;i<matching_vectors.size();i++){
     lineVector.push_back({row_1,col_1,row_2,col_2});
     }
     draw_sift_matches(input_image_1,input_image_2,lineVector,max_width,"sift_match.png");
+    // cout<<"End of get_sift_matching() function"<<endl;
    return lineVector;
 
 }
@@ -417,7 +413,7 @@ for(int i=0;i<matching_vectors.size();i++){
 Model generateRansacModel(CImg<double> image1, CImg<double> image2)
 {
     
-
+    // cout<<"In generateRansacModel() function"<<endl;
     struct Model ransac_model;
     vector<line> siftCorrespondence = get_sift_matching(image1, image2);
     int iterationCount = 30000, i, j, inliner, maxInline=-2147483648;
@@ -436,7 +432,7 @@ Model generateRansacModel(CImg<double> image1, CImg<double> image2)
         inliner = 0;
         std::vector<line> temp;
          tranformMatrix = getTransformationMatrix(l1.x_1,l1.y_1,l2.x_1,l2.y_1,l3.x_1,l3.y_1,l4.x_1,l4.y_1,l1.x_2,l1.y_2,l2.x_2,l2.y_2,l3.x_2,l3.y_2,l4.x_2,l4.y_2);
-        for(j=4;j<siftCorrespondence.size();j++)
+        for(j=4;j<int(siftCorrespondence.size());j++)
         {
             x_1 = siftCorrespondence.at(j).x_1;
             y_1 = siftCorrespondence.at(j).y_1;
@@ -468,12 +464,15 @@ Model generateRansacModel(CImg<double> image1, CImg<double> image2)
     ransac_model.transform_matrix=bestMatrix;
     ransac_model.maxInliners=maxInline;
     ransac_model.match_lines=sift_match_lines;
+    // cout<<"End of generateRansacModel() function"<<endl;
+
     return ransac_model;
+
 
 }
 
-CImg<double> sift_match_pruning(CImg<double> input_image_1,CImg <double> input_image_2){
-
+void  sift_match_pruning(CImg<double> input_image_1,CImg <double> input_image_2){
+    // cout<<"sift_match_pruning() function"<<endl;
     int max_width,max_height;
     if(input_image_1.height()<=input_image_2.height()){
         max_height=input_image_2.height();
@@ -491,7 +490,9 @@ input_image_1=input_image_1.resize(max_width,max_height);
 input_image_2=input_image_2.resize(max_width,max_height);
 Model ransac_model=generateRansacModel(input_image_1,input_image_2);
 // draw_sift_matches(input_image_1,input_image_2,ransac_model.match_lines,max_width,"sift_ransac_match.jpg");
-draw_sift_matches(input_image_1,input_image_2,ransac_model.match_lines,max_width,"sift_ransac_match.png");
+ draw_sift_matches(input_image_1,input_image_2,ransac_model.match_lines,max_width,"sift_ransac_match.png");
+// cout<<"End of sift_match_pruning() function"<<endl;
+
 
 }
 
@@ -774,18 +775,30 @@ int main(int argc, char **argv)
 	CImg<double> input_image_2(argv[3]);
 	get_sift_matching(input_image_1,input_image_2);
     sift_match_pruning(input_image_1,input_image_2);
- //    sift_matching_pruning(input_image_1,input_image_2);
-    // generateRansacModel(input_image_1,input_image_2);
-
-	
-	}
+    // cout<<"part3 end"<<endl;
+ }
 	else if(part == "part4"){
+        string file_1=argv[2];
+            string file_2=argv[3];
+            CImg<double> input_image_1(argv[2]);
+            CImg<double> input_image_2(argv[3]);
+        Model ransac_model=generateRansacModel(input_image_1,input_image_2);
+        CImg<double> transformationMatrix=ransac_model.transform_matrix;
+        double transformedMatrix[3][3];
 
-	}
-//    
-//    
-//feel free to add more conditions for other parts (e.g. more specific)
-//parts, for debugging, etc.
+        transformedMatrix[0][0] = transformationMatrix(0,0);
+                transformedMatrix[0][1] = transformationMatrix(0,1);
+                transformedMatrix[0][2] = transformationMatrix(0,2);
+                transformedMatrix[1][0] = transformationMatrix(0,3);
+                transformedMatrix[1][1] = transformationMatrix(0,4);
+                transformedMatrix[1][2] = transformationMatrix(0,5);
+                transformedMatrix[2][0] = transformationMatrix(0,6);
+                transformedMatrix[2][1] = transformationMatrix(0,7);
+                transformedMatrix[2][2] = 1;
+        
+        getWarpedImage(input_image_2, transformedMatrix);
+    }
+
   }
   catch(const string &err) {
     cerr << "Error: " << err << endl;
